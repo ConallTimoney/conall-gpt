@@ -1,1 +1,4 @@
 raw-data/*
+test/logs/*
+utils/__pycache__/data.cpython-310.pyc
+.vscode/settings.json
