@@ -11,8 +11,8 @@ from io import StringIO
 role = get_execution_role()
 import os as os 
 
-
-S3_DATA = 's3://conall-gpt/karamh chat.txt'
+S3_BUCKET = 'conall-gpt'
+S3_DATA = f's3://{S3_BUCKET}/karamh chat.txt'
 
 
 WHATSAPP_MESSAGE_PREFIX_REGEX = r'^[0-9]{2}\/[0-9]{2}\/[0-9]{4}\, [0-9]{1,2}:[0-9]{2}\s?(am|pm)\s?-\s?'
