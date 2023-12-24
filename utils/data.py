@@ -39,7 +39,11 @@ def read_whats_app_messages(path: str) -> pl.Series:
 
 
 
-def messages_to_seq2seq(messages: pl.Series, train_sender_name: str) -> pl.DataFrame:
+def messages_to_seq2seq(
+    messages: pl.Series
+    , train_sender_name: str
+    , prompt_max_length: int
+) -> pl.DataFrame:
     return (
         pl.DataFrame(messages)
         .with_columns(
@@ -66,12 +70,21 @@ def messages_to_seq2seq(messages: pl.Series, train_sender_name: str) -> pl.DataF
         )
         .lazy()
         .with_columns(
-            text = pl.concat_str([col('message').shift(i, fill_value='') for i in range(1000, 0, -1)])
+            text = 
+                pl.concat_str([
+                    col('message').shift(i, fill_value='') 
+                    for i in range(prompt_max_length, 0, -1)
+                ])
         )
         .group_by('message_group_index')
         .agg(
-            col('text').filter(col('first_message_in_target')).last()
-            , label=col('message').filter(col('train_message')).str.concat(delimiter='')
+            col('text')
+                .filter(col('first_message_in_target'))
+                .last()
+            , label=
+                col('message')
+                .filter(col('train_message'))
+                .str.concat(delimiter='')
         )
         .sort('message_group_index')
         .drop('message_group_index')
@@ -84,9 +97,10 @@ def messages_to_seq2seq(messages: pl.Series, train_sender_name: str) -> pl.DataF
 def polars_whatsapp_seq2seq(
     path
     , train_sender_name
+    , prompt_max_length
 ):
     messages = read_whats_app_messages(path)        
-    data = messages_to_seq2seq(messages, train_sender_name)
+    data = messages_to_seq2seq(messages, train_sender_name, prompt_max_length)
     return data 
 
 
@@ -101,11 +115,13 @@ def hf_whatsapp_seq2seq(
 def create_train_valid_whatsapp(
     path
     , train_sender_name
+    , prompt_max_length
     , train_fraction=0.8
 ):
     all_data = polars_whatsapp_seq2seq(
         path
         , train_sender_name
+        , prompt_max_length
     )
     
     last_train_index = int(train_fraction * all_data.shape[0])
