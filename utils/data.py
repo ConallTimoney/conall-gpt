@@ -5,8 +5,14 @@ import polars.selectors as cs
 import regex as re
 from IPython.display import display
 from datasets import Dataset, DatasetDict
+import boto3
+from sagemaker import get_execution_role
+from io import StringIO
+role = get_execution_role()
+import os as os 
 
 
+S3_DATA = 's3://conall-gpt/karamh chat.txt'
 
 
 WHATSAPP_MESSAGE_PREFIX_REGEX = r'^[0-9]{2}\/[0-9]{2}\/[0-9]{4}\, [0-9]{1,2}:[0-9]{2}\s?(am|pm)\s?-\s?'
@@ -18,6 +24,21 @@ def is_new_whatsapp_message(message: str):
 
 
 def read_whats_app_messages(path: str) -> pl.Series:
+    downloading_from_s3 = 's3' in path
+    if downloading_from_s3: 
+
+        local_download_folder = 'raw-extracts'
+        os.makedirs(local_download_folder, exist_ok=True)
+        
+        local_path = os.path.join(local_download_folder, 'data.txt')
+        bucket = path.split('/')[2:3][0]
+        object_path = '/'.join(path.split('/')[3:])
+
+        s3 = boto3.client('s3')
+        s3.download_file(bucket, object_path, local_path)
+
+        path = local_path
+
     messages = []
     with open(path, 'r') as data:
         for line in data:
@@ -35,6 +56,9 @@ def read_whats_app_messages(path: str) -> pl.Series:
         , messages
     )
     
+    if downloading_from_s3:
+        os.remove(path)
+
     return messages
 
 
