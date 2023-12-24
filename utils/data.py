@@ -6,9 +6,7 @@ import regex as re
 from IPython.display import display
 from datasets import Dataset, DatasetDict
 import boto3
-from sagemaker import get_execution_role
 from io import StringIO
-role = get_execution_role()
 import os as os 
 
 S3_BUCKET = 'conall-gpt'
